@@ -1,0 +1,5 @@
+code/data/
+code/ckpt/
+__pycache__/
+.DS_Store
+.tmp/
