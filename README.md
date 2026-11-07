@@ -21,7 +21,7 @@ python3 -m http.server 8000   # then open http://localhost:8000/seen-from-twelve
 | Play button / scrubber | training from step 0 to 3,000; between logged steps the view eases, and the numbers always belong to the logged step |
 | **Add the cameras** | the 12 training cameras (jade, each holding its photograph) and the 4 held-out cameras (white) |
 | **Compare a held-out view** (hold <kbd>H</kbd>) | photograph, render from the same pose, and their difference ×4, at whole multiples of 96 px |
-| **How it works** | the method, the numbers and what this is not |
+| **How it works** (top right) | the method, the numbers and what this is not; × or <kbd>Esc</kbd> closes it |
 | Drag or arrow keys / scroll | orbit / zoom |
 
 `prefers-reduced-motion` starts on the final step, with no spin and no autoplay.

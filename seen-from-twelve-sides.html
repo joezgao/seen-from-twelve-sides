@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Seen from twelve sides</title>
 <meta name="description" content="A 3D Gaussian splatting fit written from scratch in NumPy: twelve rendered photographs of a stone become a cloud of Gaussians.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,7 +15,8 @@
   --dim:#9a9e99;
   --faint:#3b3f3c;
   --accent:#9fd8b4;
-  --gutter:48px;
+  --gutter:32px;
+  --accent-soft:rgba(159,216,180,.13);
   --serif:'Lora',Georgia,'Times New Roman',serif;
   --sans:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
 }
@@ -28,9 +29,16 @@ canvas#view:focus-visible{box-shadow:inset 0 0 0 2px var(--accent)}
 button,input{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 
-header{position:fixed;left:var(--gutter);top:44px;max-width:42rem;pointer-events:none}
-h1{font-family:var(--serif);font-style:italic;font-weight:400;font-size:56px;line-height:1.02;letter-spacing:-0.01em;margin:0 0 16px}
-.lede{color:var(--dim);margin:0;max-width:34ch}
+header{position:fixed;left:max(var(--gutter),env(safe-area-inset-left));top:28px;max-width:42rem;pointer-events:none}
+h1{font-family:var(--serif);font-style:italic;font-weight:400;font-size:30px;line-height:1.1;letter-spacing:-0.01em;margin:0 0 12px}
+.lede{color:#8b8b8b;margin:0;max-width:480px;font-size:13px;line-height:1.62}
+/* top right: the meta block, whose last (here only) line is How it works */
+.meta{position:fixed;top:28px;right:max(var(--gutter),env(safe-area-inset-right));font-size:11px;line-height:1.7;letter-spacing:.04em;color:#5d5d5d;text-align:right}
+.made{position:relative;pointer-events:auto;font:inherit;letter-spacing:inherit;color:#5d5d5d;background:none;border:0;padding:0;margin-top:4px;cursor:pointer;text-decoration:underline;text-decoration-color:#2e2e2e;text-underline-offset:3px;transition:color .25s}
+.made:hover,.made[aria-expanded="true"]{color:var(--ink)}
+/* a 44px tap area around the small link, without changing how it looks */
+.made::after{content:"";position:absolute;inset:-13px -8px}
+body.comparing .meta{visibility:hidden}
 .lede b{color:var(--ink);font-weight:500}
 /* the input: the sixteen photographs, one row per camera ring; the held-back row is left empty */
 .photos{margin:24px 0 0}
@@ -43,7 +51,7 @@ h1{font-family:var(--serif);font-style:italic;font-weight:400;font-size:56px;lin
 .photos figcaption .j{color:var(--ink)}
 .capKeptPh{display:none}
 
-.dock{position:fixed;left:var(--gutter);right:var(--gutter);bottom:36px;display:flex;align-items:flex-end;justify-content:space-between;gap:32px;pointer-events:none}
+.dock{position:fixed;left:max(var(--gutter),env(safe-area-inset-left));right:max(var(--gutter),env(safe-area-inset-right));bottom:max(26px,env(safe-area-inset-bottom));display:flex;align-items:flex-end;justify-content:space-between;gap:32px;pointer-events:none}
 .dock > *{pointer-events:auto}
 .train{width:min(520px,100%)}
 .curve{display:block;width:100%;height:58px;overflow:visible}
@@ -56,9 +64,11 @@ h1{font-family:var(--serif);font-style:italic;font-weight:400;font-size:56px;lin
 .legend i{display:inline-block;width:16px;height:0;border-top:1.5px solid var(--accent);vertical-align:middle;margin-right:6px}
 .legend i.ho{border-top:1.5px dashed var(--ink)}
 .row{display:flex;align-items:center;gap:14px}
-#play{flex:none;width:40px;height:40px;border-radius:50%;border:1px solid var(--faint);background:transparent;cursor:pointer;display:grid;place-items:center}
-#play:hover{border-color:var(--dim)}
-#play svg{width:14px;height:14px;fill:var(--ink)}
+#play{flex:none;width:35px;height:35px;border-radius:50%;border:0;background:var(--accent);cursor:pointer;display:grid;place-items:center;transition:opacity .25s,background .25s,box-shadow .25s}
+#play:hover{opacity:.88}
+#play svg{width:13px;height:13px;fill:#000}
+#play[aria-label="Pause training"]{background:transparent;box-shadow:inset 0 0 0 1px var(--accent)}
+#play[aria-label="Pause training"] svg{fill:var(--accent)}
 input[type=range]{flex:1;-webkit-appearance:none;appearance:none;height:28px;background:transparent;cursor:pointer;margin:0}
 input[type=range]::-webkit-slider-runnable-track{height:2px;background:linear-gradient(to right,var(--accent) var(--fill,100%),var(--faint) var(--fill,100%))}
 input[type=range]::-moz-range-track{height:2px;background:var(--faint)}
@@ -69,20 +79,19 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
 .readout .step{display:block;font-family:var(--serif);font-style:italic;font-size:24px;line-height:1.2;color:var(--ink);margin-bottom:2px}
 .readout b{color:var(--ink);font-weight:500}
 
-.side{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
-.tog{background:none;border:0;padding:6px 0;cursor:pointer;color:var(--ink);display:flex;align-items:center;gap:10px;font-size:14px;text-align:right}
-.tog:hover{color:#fff}
-.tog .dot{width:9px;height:9px;border-radius:50%;border:1px solid var(--dim);flex:none}
-.tog[aria-pressed=true] .dot{background:var(--accent);border-color:var(--accent)}
-.tog kbd{font-family:var(--sans);font-size:11px;color:var(--dim);border:1px solid var(--faint);border-radius:4px;padding:0 5px}
-.credit{margin:14px 0 0;color:#6f736f;font-size:12px}
+.side{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+/* secondary buttons: outlined pills (the family .ghost style) */
+.tog{font:500 13px/1 var(--sans);letter-spacing:.02em;padding:11px 18px;border:0;border-radius:999px;cursor:pointer;color:#8b8b8b;background:none;box-shadow:inset 0 0 0 1px #2a2a2a;display:flex;align-items:center;gap:8px;transition:color .25s,background .25s,box-shadow .25s}
+.tog:hover{color:var(--ink);box-shadow:inset 0 0 0 1px #4a4a4a}
+.tog[aria-pressed=true]{color:var(--accent);background:var(--accent-soft);box-shadow:none}
+.tog kbd{font:400 10.5px/1.3 var(--sans);color:inherit;opacity:.8;border:1px solid #2a2a2a;border-radius:4px;padding:0 5px}
 .camkey{display:none;margin:0 0 6px;max-width:30ch;text-align:right;color:var(--dim);font-size:12.5px;line-height:1.45}
 .camkey.on{display:block}
 .camkey .j{color:var(--accent)}
 .camkey .w{color:var(--ink)}
 
 /* held-out comparison */
-#compare{position:fixed;top:44px;right:var(--gutter);display:none;gap:14px;align-items:flex-start;background:rgba(0,0,0,.72);padding:14px 16px 12px;border:1px solid var(--faint);border-radius:10px}
+#compare{position:fixed;top:44px;right:max(var(--gutter),env(safe-area-inset-right));display:none;gap:14px;align-items:flex-start;background:rgba(0,0,0,.72);padding:14px 16px 12px;border:1px solid var(--faint);border-radius:10px}
 #compare.on{display:block}
 #compare .pair{display:flex;gap:10px}
 #compare figure{margin:0}
@@ -94,45 +103,51 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
 #compare .sm{display:none}
 
 /* how it works */
-#how{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:#000;border-left:1px solid var(--faint);padding:44px 36px 40px;overflow-y:auto;transform:translateX(100%);transition:transform .35s ease;visibility:hidden;z-index:5}
-#how.on{transform:none;visibility:visible}
-#how h2{font-family:var(--serif);font-style:italic;font-weight:400;font-size:30px;margin:0 0 20px}
-#how h3{font-family:var(--serif);font-style:italic;font-weight:500;font-size:18px;margin:26px 0 6px}
-#how p{margin:0 0 10px;color:#c9cac4;font-size:14px;line-height:1.6;max-width:62ch}
+/* the family panel (as in acts): a card at top right; a bottom sheet on phones */
+#how{position:fixed;top:24px;right:max(24px,env(safe-area-inset-right));width:min(420px,calc(100% - 32px));max-height:calc(100% - 48px);overflow:auto;padding:22px 24px 20px;
+  background:rgba(8,8,8,.94);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid #1f1f1f;border-radius:12px;
+  opacity:0;transform:translateY(-4px);pointer-events:none;visibility:hidden;transition:opacity .3s,transform .3s,visibility 0s linear .3s;z-index:5;overscroll-behavior:contain}
+#how.on{opacity:1;transform:none;pointer-events:auto;visibility:visible;transition:opacity .3s,transform .3s}
+#how h2{font-family:var(--serif);font-style:italic;font-weight:400;font-size:20px;line-height:1.2;margin:0 0 4px}
+#how h3{font-family:var(--serif);font-style:italic;font-weight:500;font-size:15px;margin:18px 0 4px}
+#how p{margin:0 0 8px;color:#c9cac4;font-size:12.5px;line-height:1.6}
 #how .eq{font-family:var(--serif);font-style:italic;color:var(--ink);font-size:15px;margin:8px 0 12px;padding-left:14px;border-left:1px solid var(--accent)}
-#how .close{position:absolute;top:30px;right:26px;background:none;border:1px solid var(--faint);border-radius:50%;width:36px;height:36px;cursor:pointer;color:var(--ink);font-size:18px;line-height:1}
-#how table{border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums;color:#c9cac4;margin:6px 0 10px}
+#how .close{position:absolute;top:7px;right:7px;width:44px;height:44px;padding:0;background:none;border:0;border-radius:999px;cursor:pointer;color:#5d5d5d;font-size:17px;line-height:44px}
+#how .close:hover{color:var(--ink)}
+#how .credit{margin:14px 0 0;padding-top:10px;border-top:1px solid #161616;font:italic 400 12.5px/1.4 var(--serif);color:#8e8e8e;max-width:none}
+#how table{border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums;color:#c9cac4;margin:6px 0 10px}
 #how td,#how th{padding:3px 14px 3px 0;text-align:left;font-weight:400}
 #how th{color:var(--dim)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 #fallback{position:fixed;inset:0;display:none;place-items:center;color:var(--dim);padding:24px;text-align:center}
 
-@media (max-width:760px){
+@media (max-width:720px){
   :root{--gutter:16px}
-  header{top:20px;max-width:none;right:16px}
-  h1{font-size:34px;margin-bottom:8px}
-  .lede{font-size:13.5px;max-width:40ch}
-  .dock{bottom:14px;flex-direction:column;align-items:stretch;gap:6px}
+  header{top:18px;max-width:none;right:max(16px,env(safe-area-inset-right))}
+  h1{font-size:25px;margin-bottom:8px}
+  .lede{font-size:12.5px;line-height:1.55;max-width:none}
+  .meta{position:static;text-align:left;font-size:10.5px;line-height:1.7}
+  .made{margin-top:2px}
+  .dock{bottom:max(16px,env(safe-area-inset-bottom));flex-direction:column;align-items:stretch;gap:6px}
   .train{width:100%}
   .curve{height:40px}
   .legend{font-size:11px;margin:0 0 2px}
   .readout{margin-top:4px;font-size:12px}
   .readout .step{font-size:18px}
-  .side{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:0 12px}
-  .tog{font-size:13px;padding:8px 0}
+  .side{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:7px}
+  .tog{font-size:12.5px;padding:10px 13px}
   .tog kbd{display:none}
-  .credit{width:100%;margin:2px 0 0;font-size:11px}
-  #compare{top:16px;left:16px;right:16px;padding:12px}
-  body.comparing header{visibility:hidden}
+  #compare{top:16px;left:max(16px,env(safe-area-inset-left));right:max(16px,env(safe-area-inset-right));padding:12px}
   #compare p{font-size:12px;margin-top:8px}
   .camkey{font-size:11.5px;width:100%;max-width:none;text-align:left;margin:0}
   #compare .pair{gap:8px;justify-content:space-between}
   #compare canvas{width:96px;height:96px}
   #compare figcaption{font-size:11px}
   #compare .lg{display:none} #compare .sm{display:inline}
-  #how{padding:28px 20px 32px}
+  #how{top:auto;bottom:max(16px,env(safe-area-inset-bottom));right:max(16px,env(safe-area-inset-right));max-height:min(78%,calc(100% - 32px));
+    width:calc(100% - max(16px,env(safe-area-inset-left)) - max(16px,env(safe-area-inset-right)))}
 }
-@media (max-width:760px){
+@media (max-width:720px){
   .photos{margin:10px 0 0}
   .photos .grid{grid-template-columns:repeat(12,1fr);gap:3px}
   .ph{width:auto;height:auto;aspect-ratio:1}
@@ -141,16 +156,85 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
   .capKept{display:none} .capKeptPh{display:inline}
 }
 /* narrower desktops: the comparison drops to the photographs' own 96 px so it clears the title and the stone */
-@media (max-width:1399px) and (min-width:761px){
+@media (max-width:1399px) and (min-width:721px){
   #compare canvas{width:96px;height:96px}
   #compare figcaption{font-size:11px}
   #compare .lg{display:none} #compare .sm{display:inline}
   #compare p{max-width:308px;font-size:12.5px}
 }
-@media (max-height:820px) and (min-width:761px){ .photos{--ph:30px;margin-top:18px} }
-@media (max-height:720px) and (min-width:761px){ .photos{display:none} }
-@media (max-height:620px) and (min-width:761px){ .lede{display:none} }
-@media (prefers-reduced-motion:reduce){ #how{transition:none} .ph{transition:none} }
+@media (max-height:820px) and (min-width:721px){ .photos{--ph:30px;margin-top:18px} }
+@media (max-height:720px) and (min-width:721px){ .photos{display:none} }
+@media (max-height:620px) and (min-width:721px){ .lede{display:none} }
+/* short phones (iPhone SE): the stone needs the room; the photo strip and the legend go, the curve gets shorter */
+@media (max-width:720px) and (max-height:620px){
+  .photos{display:none}
+  .legend{display:none}
+  .curve{height:36px}
+}
+/* phones, comparing: the title and How it works stay in view. The caption and the photo strip, which the card
+   would cover, step aside, and the card sits under the title (resize() writes its top). */
+@media (max-width:720px){
+  body.comparing .meta{visibility:visible}
+  body.comparing .lede,body.comparing .photos{display:none}
+  #compare{background:rgba(0,0,0,.86)}
+}
+/* the narrowest phones: three 96 px images and their gaps are wider than the card, so they share its width */
+@media (max-width:360px){
+  #compare figure{flex:1 1 0;min-width:0}
+  #compare canvas{width:100%;height:auto;aspect-ratio:1;image-rendering:auto}
+}
+/* short phones, comparing: the curve gives its room to the card (the slider and the readout stay) */
+@media (max-width:720px) and (max-height:620px) and (orientation:portrait){ body.comparing .curve{display:none} }
+body.comparing.nostone canvas#view{visibility:hidden}
+/* phones on their side: the desktop layout in 390 px of height. The title, curve, slider and readout form a left
+   column; resize() centres the stone in the space to its right, above the two buttons; the comparison card sits
+   at the top of that space, clear of the buttons */
+@media (max-height:500px) and (min-width:721px) and (orientation:landscape){
+  header{top:14px}
+  h1{font-size:24px;margin:0}
+  .meta{top:14px}
+  .dock{bottom:max(12px,env(safe-area-inset-bottom));gap:20px}
+  .train{width:min(392px,47vw)}
+  .curve{height:40px}
+  .legend{font-size:11px;margin:0 0 2px}
+  .readout{margin-top:4px;font-size:12px}
+  .readout .step{font-size:20px}
+  #compare{top:12px;padding:12px 14px 10px;background:rgba(0,0,0,.86)}
+  #compare p{font-size:12px;margin-top:8px}
+}
+/* smaller phones on their side (667x375, 568x320) start from the portrait phone rules: give them the same left
+   column, with the meta at top right and the buttons stacked at bottom right. The card fills the space right of
+   the column, so its three images share that width. */
+@media (max-width:720px) and (max-height:500px) and (orientation:landscape){
+  :root{--coll:calc(max(16px,env(safe-area-inset-left)) + min(392px,47vw) + 16px)}
+  header{top:14px;right:auto;max-width:42rem}
+  h1{font-size:24px;margin:0}
+  .lede{display:none}
+  .meta{position:fixed;top:14px;right:max(16px,env(safe-area-inset-right));text-align:right}
+  body.comparing .meta{visibility:hidden}
+  .dock{flex-direction:row;align-items:flex-end;gap:16px;bottom:max(12px,env(safe-area-inset-bottom))}
+  .train{width:min(392px,47vw);flex:none}
+  .side{flex-direction:column;flex-wrap:nowrap;align-items:flex-end;justify-content:flex-end}
+  .camkey{text-align:right;width:auto;max-width:30ch}
+  #compare{top:12px;left:var(--coll);right:max(16px,env(safe-area-inset-right));padding:10px 12px;background:rgba(0,0,0,.86)}
+  #compare .pair{gap:8px}
+  #compare figure{flex:1 1 0;min-width:0}
+  #compare canvas{width:100%;max-width:96px;height:auto;aspect-ratio:1;image-rendering:auto}
+  #compare p{margin-top:6px}
+}
+/* the shortest (iPhone SE on its side): while comparing, the card needs the room of "Add the cameras", whose
+   cameras it would cover anyway */
+@media (max-width:720px) and (max-height:340px) and (orientation:landscape){ body.comparing #camsBtn,body.comparing .camkey{display:none} }
+/* short landscape screens: the How it works card fits above the home indicator */
+@media (max-height:500px){ #how{top:12px;max-height:calc(100% - 12px - max(12px,env(safe-area-inset-bottom)))} }
+/* touch screens have no H key: the button itself toggles the comparison, so the key hint goes */
+@media (hover:none){ .tog kbd{display:none} }
+@media (pointer:coarse){
+  .tog,#play{position:relative}
+  .tog::after{content:"";position:absolute;inset:-6px -3px}
+  #play::after{content:"";position:absolute;inset:-5px}
+}
+@media (prefers-reduced-motion:reduce){ *{transition:none!important;animation:none!important} }
 </style>
 </head>
 <body>
@@ -160,6 +244,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
 <header>
   <h1>Seen from twelve sides</h1>
   <p class="lede" id="lede"></p>
+  <div class="meta"><button class="made" id="howBtn" aria-expanded="false" aria-controls="how">How it works</button></div>
   <figure class="photos" id="photos">
     <div class="grid" id="photoGrid" role="img"></div>
     <figcaption id="photoCap"></figcaption>
@@ -188,10 +273,8 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
   </div>
   <div class="side">
     <p class="camkey" id="camkey"><span class="j">Jade</span>: the 12 training cameras, each holding the photograph it took. <span class="w">White</span>: the 4 held-out cameras.</p>
-    <button class="tog" id="camsBtn" aria-pressed="false"><span>Add the cameras</span><span class="dot"></span></button>
-    <button class="tog" id="heldBtn" aria-pressed="false"><span>Compare a held-out view <kbd>hold H</kbd></span><span class="dot"></span></button>
-    <button class="tog" id="howBtn" aria-expanded="false" aria-controls="how"><span>How it works</span><span class="dot"></span></button>
-    <p class="credit">built with Claude for Joe Gao</p>
+    <button class="tog" id="camsBtn" aria-pressed="false">Add the cameras</button>
+    <button class="tog" id="heldBtn" aria-pressed="false">Compare a held-out view <kbd>hold H</kbd></button>
   </div>
 </div>
 
@@ -199,6 +282,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
   <button class="close" id="howClose" aria-label="Close">&times;</button>
   <h2>How it works</h2>
   <div id="howBody"></div>
+  <p class="credit">Built with Claude for Joe Gao.</p>
 </aside>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
@@ -397,8 +481,9 @@ atlasTex.magFilter = THREE.LinearFilter; atlasTex.minFilter = THREE.LinearFilter
 const view = { az: 0.6, el: 0.32, dist: 0, target: null };
 let baseDist = 4.6;
 // frame the stone near the size it was fitted at (96 px photographs): about 3x on a laptop screen, not full-bleed
-const FIT = { desk: 2.8, phone: 1.85, camsDesk: 1.95, camsPhone: 1.55 };
-function fitDist(cams) { const a = innerWidth / innerHeight, v = THREE.MathUtils.degToRad(META.fov) / 2, h = Math.atan(Math.tan(v) * a), ph = innerWidth < 761; return (cams ? (ph ? FIT.camsPhone : FIT.camsDesk) : (ph ? FIT.phone : FIT.desk)) / Math.tan(Math.min(v, h)); }
+const SIDE = matchMedia('(max-height:500px) and (orientation:landscape)');   // a phone on its side
+const FIT = { desk: 2.8, phone: 1.85, camsDesk: 1.95, camsPhone: 1.55, band: 1.2 };
+function fitDist(cams) { const a = innerWidth / innerHeight, v = THREE.MathUtils.degToRad(META.fov) / 2, h = Math.atan(Math.tan(v) * a), ph = innerWidth < 721; return (cams ? (ph ? FIT.camsPhone : FIT.camsDesk) : (ph ? FIT.phone : FIT.desk)) / Math.tan(Math.min(v, h)); }
 function placeCamera(cam, az, el, dist) {
   cam.position.set(dist * Math.cos(el) * Math.sin(az), dist * Math.sin(el), dist * Math.cos(el) * Math.cos(az));
   cam.up.set(0, 1, 0); cam.lookAt(0, 0, 0);
@@ -542,16 +627,19 @@ function drawMini() {
 function heldOn() {
   if (held.on) return;
   held.on = true; held.j = (held.j + 1) % META.held_ids.length;
-  held.saved = { az: view.az, el: view.el, dist: view.dist }; stopSpin();
+  held.saved = { az: view.az, el: view.el, dist: view.dist, k: view.dist / baseDist }; stopSpin();
   const c = META.cams[META.held_ids[held.j]];
-  glideTo(THREE.MathUtils.degToRad(c.az), THREE.MathUtils.degToRad(c.el), innerWidth < 761 ? view.dist : Math.max(view.dist, baseDist * 1.25), 600);
   phSlots.forEach((el, k) => el.classList.toggle('shown', k === META.held_ids[held.j]));
   $('heldBtn').setAttribute('aria-pressed', 'true'); $('compare').classList.add('on'); document.body.classList.add('comparing'); updateCompare();
+  const upright = innerWidth < 721 && !SIDE.matches;
+  if (upright) resize();   // on an upright phone the card (now filled) bounds the stone's band
+  glideTo(THREE.MathUtils.degToRad(c.az), THREE.MathUtils.degToRad(c.el), upright ? baseDist * held.saved.k : Math.max(view.dist, baseDist * 1.25), 600);
 }
 function heldOff() {
   if (!held.on) return; held.on = false;
   phSlots.forEach((el) => el.classList.remove('shown'));
-  $('heldBtn').setAttribute('aria-pressed', 'false'); $('compare').classList.remove('on'); document.body.classList.remove('comparing');
+  $('heldBtn').setAttribute('aria-pressed', 'false'); $('compare').classList.remove('on'); document.body.classList.remove('comparing', 'nostone');
+  if (innerWidth < 721 && !SIDE.matches) { resize(); if (held.saved) held.saved.dist = baseDist * held.saved.k; }
   if (held.saved) glideTo(held.saved.az, held.saved.el, held.saved.dist, 600);
 }
 $('heldBtn').addEventListener('click', () => (held.on ? heldOff() : heldOn()));
@@ -602,11 +690,33 @@ function resize() {
   renderer.setSize(innerWidth, innerHeight, false);
   camera.aspect = innerWidth / innerHeight;
   // centre the stone in the space left between the title and the controls (matters on phones)
-  const top = document.querySelector('header').getBoundingClientRect().bottom, bot = document.querySelector('.dock').getBoundingClientRect().top;
-  const dy = innerWidth < 761 && bot > top ? Math.round(innerHeight / 2 - (top + bot) / 2) : 0;
-  if (dy) camera.setViewOffset(innerWidth, innerHeight, 0, dy, innerWidth, innerHeight); else camera.clearViewOffset();
+  const hdr = document.querySelector('header').getBoundingClientRect().bottom, bot = document.querySelector('.dock').getBoundingClientRect().top;
+  const cmp = $('compare');
+  // phones, comparing: the card sits under the title, and the stone takes the band between the card and the dock
+  const side = SIDE.matches, upright = innerWidth < 721 && !side;
+  if (upright && held.on) { cmp.style.top = Math.round(hdr + 10) + 'px'; } else cmp.style.top = '';
+  const top = upright && held.on ? cmp.getBoundingClientRect().bottom : hdr;
+  const phone = upright && bot > top;
+  // a short phone, comparing: under 60 px are left between the card and the dock, so the 3D view steps aside
+  // (the card shows the stone three times; its images are rendered off screen and are not affected)
+  document.body.classList.toggle('nostone', upright && held.on && bot - top < 60);
+  // a phone on its side: the stone goes in the space right of the left column (title, curve, readout), above the buttons
+  const tv = Math.tan(THREE.MathUtils.degToRad(META.fov) / 2);
+  let dx = 0, dy = phone ? Math.round(innerHeight / 2 - (top + bot) / 2) : 0, bandW = 0, bandH = 0;
+  if (side) {
+    const tr = document.querySelector('.train').getBoundingClientRect(), dk = document.querySelector('.dock').getBoundingClientRect();
+    const t0 = document.querySelector('.meta').getBoundingClientRect().bottom + 6, b0 = document.querySelector('.side').getBoundingClientRect().top - 8;
+    const l0 = tr.right + 12, r0 = dk.right;
+    bandW = Math.max(1, r0 - l0); bandH = Math.max(1, b0 - t0);
+    dx = Math.round(innerWidth / 2 - (l0 + r0) / 2); dy = Math.round(innerHeight / 2 - (t0 + b0) / 2);
+  }
+  if (dx || dy) camera.setViewOffset(innerWidth, innerHeight, dx, dy, innerWidth, innerHeight); else camera.clearViewOffset();
   camera.updateProjectionMatrix();
-  const nb = fitDist(); view.dist = view.dist ? view.dist * nb / baseDist : nb; baseDist = nb;
+  // on a phone the stone must also fit the height of that band (else the dock covers it): step back if needed
+  let nb = fitDist();
+  if (phone) nb = Math.max(nb, FIT.band / (tv * Math.max(0.2, (bot - top) / innerHeight)));
+  if (side) nb = Math.max(nb, FIT.band / (tv * Math.max(0.2, bandH / innerHeight)), FIT.band / (tv * camera.aspect * Math.max(0.2, bandW / innerWidth)));
+  view.dist = view.dist ? view.dist * nb / baseDist : nb; baseDist = nb;
   dirtySort = true; requestDraw();
 }
 window.addEventListener('resize', resize);
@@ -614,6 +724,9 @@ resize();
 
 // first visit: show the cloud, then let it train once (unless reduced motion asks for stillness)
 if (reduced) { goTo(last, 0); } else { goTo(0, 0); setTimeout(() => { if (!userTouched && !playing && +slider.value === 0) play(); }, 900); }
+// the readout and the web fonts change the dock's and header's height: measure the free band again once they are in
+requestAnimationFrame(resize);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(resize);
 
 // test hooks
 window.__splat = {
