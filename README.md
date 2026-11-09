@@ -10,6 +10,8 @@ The page opens on the input: the twelve photographs, one row per ring of cameras
 
 ## Open it
 
+**Live:** [joezgao.github.io/seen-from-twelve-sides/seen-from-twelve-sides.html](https://joezgao.github.io/seen-from-twelve-sides/seen-from-twelve-sides.html) (nothing to install).
+
 Open `seen-from-twelve-sides.html` in a recent browser. It is three files that must sit side by side: `seen-from-twelve-sides.html` (24 kB, the page), `twelve-data.js` (2.2 MB, every training snapshot) and `twelve-app.js` (34 kB, the code); the two scripts load after the page has painted; it needs an internet connection to load three.js and two fonts. If your browser blocks local files:
 
 ```bash
