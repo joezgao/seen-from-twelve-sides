@@ -74,7 +74,7 @@ python3 gradcheck.py      # -> data/gradcheck.json
 python3 train.py --fresh --prune 0.005 --reset 1200   # -> data/log.json, data/snaps/
 ```
 
-Training is resumable (`ckpt/latest.npz`, every 250 steps). The script that packs the snapshots into the page, and the Playwright check, are not in this repository yet.
+Training is resumable (`ckpt/latest.npz`, every 250 steps). The script that packs the snapshots into the page, and the Playwright check, are not included in this repository.
 
 ## In this repository
 
