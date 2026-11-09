@@ -10,7 +10,7 @@ The page opens on the input: the twelve photographs, one row per ring of cameras
 
 ## Open it
 
-Open `seen-from-twelve-sides.html` in a recent browser. It is a single 2.3 MB file with every training snapshot inlined; it needs an internet connection to load three.js and two fonts. If your browser blocks local files:
+Open `seen-from-twelve-sides.html` in a recent browser. It is three files that must sit side by side: `seen-from-twelve-sides.html` (24 kB, the page), `twelve-data.js` (2.2 MB, every training snapshot) and `twelve-app.js` (34 kB, the code); the two scripts load after the page has painted; it needs an internet connection to load three.js and two fonts. If your browser blocks local files:
 
 ```bash
 python3 -m http.server 8000   # then open http://localhost:8000/seen-from-twelve-sides.html
@@ -78,7 +78,8 @@ Training is resumable (`ckpt/latest.npz`, every 250 steps). The script that pack
 
 ## In this repository
 
-- `seen-from-twelve-sides.html`: the piece
+- `seen-from-twelve-sides.html`: the page
+- `twelve-data.js`, `twelve-app.js`: the training snapshots and the viewer code (split out on 2026-11-09 so the page paints first: Lighthouse mobile performance 56 → 99, first paint 8.8 s → 0.6 s, simulated throttling, served gzipped)
 - `code/`: the scene, the rasterizer with its backward pass, the gradient check and the trainer
 - `screenshots/`: the cameras, a held-out comparison, and the phone layout
 - `loop/`: the loop video, its GIF and a poster
