@@ -65,7 +65,7 @@ Left out compared with the paper: structure-from-motion initialisation, densific
 
 ## Run the training
 
-Needs Python 3 and NumPy.
+Needs Python 3, NumPy and Pillow (`scene.py` also writes a contact sheet, `data/gt_grid.png`). A full run took 341 s on an Apple M5 Pro with two threads; a re-run there matched the table above to within 0.06 dB.
 
 ```bash
 cd code
