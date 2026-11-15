@@ -76,13 +76,23 @@ python3 gradcheck.py      # -> data/gradcheck.json
 python3 train.py --fresh --prune 0.005 --reset 1200   # -> data/log.json, data/snaps/
 ```
 
+To check the numbers without retraining (NumPy only, about 20 s on an M5 Pro), render the shipped Gaussians and compare with the page:
+
+```bash
+cd code
+python3 scene.py          # gt.npz is written before the Pillow contact sheet, so a missing Pillow is fine here
+python3 check_page.py     # every snapshot's train and held-out PSNR, opacity > 0.05, and the stone-pixel PSNR
+```
+
+On the page's float16 snapshots the worst difference from the table is 0.008 dB; the opacity > 0.05 count is off by one at steps 1,000 and 1,500, where a Gaussian sits right at 0.05 and float16 rounds it under.
+
 Training is resumable (`ckpt/latest.npz`, every 250 steps). The script that packs the snapshots into the page, and the Playwright check, are not included in this repository.
 
 ## In this repository
 
 - `seen-from-twelve-sides.html`: the page
 - `twelve-data.js`, `twelve-app.js`: the training snapshots and the viewer code (split out on 2026-11-09 so the page paints first: Lighthouse mobile performance 56 → 99, first paint 8.8 s → 0.6 s, simulated throttling, served gzipped)
-- `code/`: the scene, the rasterizer with its backward pass, the gradient check and the trainer
+- `code/`: the scene, the rasterizer with its backward pass, the gradient check, the trainer, and `check_page.py`
 - `screenshots/`: the cameras, a held-out comparison, and the phone layout
 - `loop/`: the loop video, its GIF and a poster
 
