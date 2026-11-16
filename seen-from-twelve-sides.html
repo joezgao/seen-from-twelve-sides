@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Lora:ital,wght@1,400;1,500&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Lora:ital,wght@1,400;1,500&display=swap"></noscript>
 <style>
+@font-face{font-family:"Inter fallback";src:local("Arial"),local("ArialMT");size-adjust:106.8%;ascent-override:90.4%;descent-override:22.5%;line-gap-override:0%}
 :root{
   --black:#000;
   --ink:#ecebe5;
@@ -20,7 +21,7 @@
   --gutter:32px;
   --accent-soft:rgba(159,216,180,.13);
   --serif:'Lora',Georgia,'Times New Roman',serif;
-  --sans:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --sans:'Inter',"Inter fallback",system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:var(--black);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
