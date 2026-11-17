@@ -269,13 +269,13 @@ body.comparing.nostone canvas#view{visibility:hidden}
 <div class="dock">
   <div class="train">
     <svg class="curve" id="curve" viewBox="0 0 520 58" preserveAspectRatio="none" aria-hidden="true"></svg>
-    <div class="legend" aria-hidden="true"><span><i></i>training views</span><span><i class="ho"></i>held-out views</span><span id="ytick"></span></div>
+    <div class="legend" aria-hidden="true"><span><i></i>training views</span><span><i class="ho"></i>held-out views</span><span id="ytick">PSNR 9 to 34 dB</span></div>
     <div class="row">
       <button id="play" aria-label="Play training"><svg viewBox="0 0 14 14" id="playIcon"><path d="M3 1.5v11l9-5.5z"/></svg></button>
       <label class="sr" for="step">Training step</label>
       <input type="range" id="step" min="0" max="1" step="1" value="0">
     </div>
-    <p class="readout" id="readout" aria-live="polite" title="PSNR over the whole 96 px image on its black background"></p>
+    <p class="readout" id="readout" aria-live="polite" title="PSNR over the whole 96 px image on its black background"><span class="step">Step 0</span>PSNR <b>9.7 dB</b> on the training views, <b>9.6 dB</b> on the held-out views.<br>4,000 of 4,000 Gaussians have opacity above 0.05.</p>
   </div>
   <div class="side">
     <p class="camkey" id="camkey"><span class="j">Jade</span>: the 12 training cameras, each holding the photograph it took. <span class="w">White</span>: the 4 held-out cameras.</p>
