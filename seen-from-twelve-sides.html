@@ -65,6 +65,8 @@ body.comparing .meta{visibility:hidden}
 .capKeptPh{display:none}
 
 .dock{position:fixed;left:max(var(--gutter),env(safe-area-inset-left));right:max(var(--gutter),env(safe-area-inset-right));bottom:max(26px,env(safe-area-inset-bottom));display:flex;align-items:flex-end;justify-content:space-between;gap:32px;pointer-events:none}
+/* Under a slow link the first paint can land while the dock's markup is half parsed (part height, then full a frame later). Keep it hidden until the parser has reached the element after it; browsers without :has() ignore this rule and show it as before. */
+.dock:not(:has(+ *)){visibility:hidden}
 .dock > *{pointer-events:auto}
 .train{width:min(520px,100%)}
 .curve{display:block;width:100%;height:58px;overflow:visible}
